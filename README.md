@@ -204,7 +204,8 @@ Approach:
 
 
 
-SELECT userid, SUM(PRICE) AS amount_spent_before_membership 
+
+SELECT userid, COUNT(created_date) AS order_count, SUM(PRICE) AS amount_spent_before_membership 
 FROM
 (SELECT 
 s.userid, s.created_date, g.gold_signup_date, p.price
@@ -212,8 +213,82 @@ FROM
 sales AS s 
 JOIN 
 goldusers_signup AS g
-ON s.userid = g.userid 
+ON s.userid = g.userid AND created_date < gold_signup_date
 JOIN
 product AS p
-ON p.product_id = s.product_id) AS v WHERE created_date < gold_signup_date
+ON p.product_id = s.product_id) AS v 
 GROUP BY userid ORDER BY userid;
+
+
+
+Approach: 
+
+1. We joined sales and golduser_signup tables to get details of gold users and put a condition to only include those transactions which were on a date prior to gold membership dates
+2. We then joined the result of earlier join with product table so we can fetch prices from product table
+3. At last we did count & sum operation on price column grouped by userid so we can get **a**. Total order count before membership **b**. Sum spent by each user before membership
+
+| userid | order_count_before_membership | amount_spent_before_membership |
+| ------ | ----------------------------- | ------------------------------ |
+| 1      | 5                             | 4030                           |
+| 3      | 3                             | 2720                           |
+
+
+
+If buying each product generates Zomato points using given table calculate following
+1. Points earned by each user
+2. For Which product most points have been given?
+
+| Product_id | Money Spent | Points Given |
+| ---------- | ----------- | ------------ |
+| 1          | 5Rs         | 1            |
+| 2          | 10Rs        | 5            |
+| 3          | 5Rs         | 1            |
+
+
+
+**Query for points earned by each user**
+SELECT userid, SUM(points) AS points_earned FROM 
+(SELECT s.userid, s.product_id, p.price, 
+IF(s.product_id = 2,FLOOR((price/10)*5), FLOOR(price/5)) AS points
+FROM sales AS s 
+JOIN product AS p
+ON s.product_id = p.product_id) AS r GROUP BY userid;
+
+
+Approach:
+1. Joined sales and product table to get price details listed for each product in corresponding columns 
+2. Created a new column that calculates zomato points and it gets its values from price column based on given criteria inside IF function
+3. Sum of points column and grouped by user id
+
+
+
+
+
+| userid | points_earned |
+| ------ | ------------- |
+| 1      | 1829          |
+| 3      | 1697          |
+| 2      | 763           |
+
+**Query for maxmimum points giving product**
+
+SELECT product_id, total_points FROM (
+SELECT *, RANK()OVER(ORDER BY total_points DESC) AS rnk FROM (SELECT product_id, SUM(points) total_points FROM 
+(SELECT s.userid, s.product_id, p.price, 
+IF(s.product_id = 2,FLOOR((price/10)*5), FLOOR(price/5)) AS points
+FROM sales AS s
+JOIN product AS p
+ON s.product_id = p.product_id) AS r GROUP BY product_id) AS s) as u WHERE rnk =1;
+
+Approach:
+1. Joined sales and product table to get price details listed for each product in corresponding columns
+2. Created a new column that calculates zomato points and it gets its values from price column based on given criteria inside IF function
+3. Sum of points column and grouped by product_id
+4. Ranked the result rows (highest point row gets rank 1)
+5. Used select statment for row which has rank 1  
+
+
+| product_id | total_points |
+| ---------- | ------------ |
+| 2          | 3045         |
+
