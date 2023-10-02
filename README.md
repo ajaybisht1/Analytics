@@ -117,3 +117,103 @@ Approach:
 
 
 Conclusion: Product_id 1 is the only product that every new user buys. Company should focus on advertising this product to newly targetted users.
+
+
+
+**What was the most purchase product and how many times was it purchased by users?**
+
+
+SELECT  product_id AS most_purch_product_id, userid, COUNT(product_id) AS purchase_count FROM SALES WHERE product_id IN (SELECT product_id FROM (SELECT product_id, COUNT(product_id) AS product_count, RANK()OVER(ORDER BY COUNT(product_id) DESC) AS rnk FROM SALES GROUP BY product_id) as t where rnk = 1) GROUP BY product_id, userid ORDER BY Product_id;
+
+Approach:
+
+1. We started by counting number of times each product appeared in sales table by count function and ranked them (most sold product was rank 1 least sold was rank 3) using rank function
+2. We then created a subquery where our result table was used as inner table and outer query was fetching prodcut_id from inner query
+3. We then created one more subquery where we passed the condition of product_id that we got from previous subquery which will give us columns (product_id, userid, count(product_id)) which are realted to most sold product's product_id.
+
+
+| most_purch_product_id | userid | purchase_count |
+| --------------------- | ------ | -------------- |
+| 2                     | 1      | 3              |
+| 2                     | 2      | 1              |
+| 2                     | 3      | 3              |
+
+
+**Which item was the most popular for each customer?**
+
+
+
+SELECT userid, product_id AS most_purchased_product_id FROM (SELECT *, RANK()OVER(PARTITION BY userid ORDER BY prod_count DESC) AS rnk FROM (SELECT userid, product_id, COUNT(product_id) AS prod_count FROM SALES GROUP BY userid, product_id ORDER BY userid) AS T) AS t where rnk = 1;
+
+
+Approach:
+
+1. First we fetched how many times each user made purchase for each product
+2. Then we ranked these purchases for each user
+3. We then fetched userid and product_id from rows which were ranked 1
+
+| userid | most_purchased_product_id |
+| ------ | ------------------------- |
+| 1      | 2                         |
+| 2      | 3                         |
+| 3      | 2                         | 
+
+
+
+**Which item was purchase first by customer after they became member?**
+
+SELECT userid, product_id AS first_product_after_membership FROM (SELECT *, RANK()OVER(PARTITION BY userid ORDER BY created_date) as rnk FROM (SELECT s.*, g.gold_signup_date  FROM sales AS s JOIN goldusers_signup AS g ON s.USERID = g.USERID WHERE created_date > gold_signup_date) AS l) AS m WHERE rnk = 1;
+
+
+Approach:
+
+1. First we joined sales and goldusers_signup table to only get data of those users who were gold members
+2. During joining of table we also gave condition to ensure we only get those transactions of gold users which were on a later date from their purchase of gold membership because the question asks us to list their first transaction after getting membership.
+3. We then ranked these transactions for each user based on created date (such that smallest date gets rank 1)
+4. At last we only fecthed those rows which were ranked 1
+
+
+| userid | first_product_after_membership |
+| ------ | ------------------------------ |
+| 1      | 3                              |
+| 3      | 2                              |
+
+
+**Which item was purchased just before the customer became a member?**
+
+
+SELECT userid, product_id AS product_purch_justbefore_membership FROM (SELECT *, RANK()OVER(PARTITION BY userid ORDER BY created_date DESC) as rnk FROM (SELECT s.*, g.gold_signup_date  FROM sales AS s JOIN goldusers_signup AS g ON s.USERID = g.USERID WHERE created_date < gold_signup_date) AS l) AS m WHERE rnk = 1;
+
+
+Approach:
+
+1. First we joined sales and goldusers_signup table to only get data of those users who were gold members
+2. During joining of table we also gave condition to ensure we only get those transactions of gold users which were on a prior date from their purchase of gold membership because the question asks us to list their last transaction before getting membership.
+3. We then ranked these transactions for each user based on created date (such that most recent date gets rank 1)
+4. At last we only fecthed those rows which were ranked 1
+
+
+| userid | product_purch_justbefore_membership |
+| ------ | ----------------------------------- |
+| 1      | 2                                   |
+| 3      | 2                                   |
+
+
+
+**WHAT IS TOTAL ORDERS AND AMOUNT SPENT BY USER BEFORE BECOMING A GOLD USER?**
+
+
+
+SELECT userid, SUM(PRICE) AS amount_spent_before_membership 
+FROM
+(SELECT 
+s.userid, s.created_date, g.gold_signup_date, p.price
+FROM 
+sales AS s 
+JOIN 
+goldusers_signup AS g
+ON s.userid = g.userid 
+JOIN
+product AS p
+ON p.product_id = s.product_id) AS v WHERE created_date < gold_signup_date
+GROUP BY userid ORDER BY userid;
