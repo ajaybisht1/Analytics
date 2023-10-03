@@ -1,4 +1,4 @@
-# Analytics
+![image](https://github.com/ajaybisht1/Analytics/assets/146637154/b8c0ff23-f677-48df-80e2-ae5f0f5d1b19)# Analytics
 
 **Zomato App Data Analysis**
 
@@ -291,4 +291,105 @@ Approach:
 | product_id | total_points |
 | ---------- | ------------ |
 | 2          | 3045         |
+
+
+**In the first year after a customer joins gold program (including their joining date) irrespective of what the customer has purchased they earn 5 zomato points for every 10RS spent. Who earned more user 1 or user 3 and what was their points earning in their first year?**
+
+
+
+
+
+SELECT userid, FLOOR((price/10)*5) AS points FROM
+(SELECT 
+s.userid, s.created_date, s.product_id, g.gold_signup_date, p.price 
+FROM sales AS s JOIN goldusers_signup AS g 
+ON s.userid = g.userid 
+AND s.created_date >= g.gold_signup_date AND DATEDIFF(s.created_date, g.gold_signup_date )<=365
+JOIN product AS p ON s.product_id = p.product_id 
+) as b;
+
+
+Approach:
+
+1. Joined sales and golduser_signup table to only get transactions of gold users and given a condition to only include transactions having dates from the date of membership till next one year.
+2.  Joined the result table with product table to list prices in corresopnding column so we can calculate zomato points later on
+3.  Added a column called points that calculates points earned with the help of price column, performed sum operation on it and grouped results by userid.
+
+
+| userid | points |
+| ------ | ------ |
+| 3      | 435    |
+| 1      | 165    |
+
+
+
+**Rank all the transactions of the customers**
+
+
+SELECT *, RANK()OVER(PARTITION BY userid ORDER BY created_date) AS rnk FROM sales;
+
+
+Approach:
+
+1. Used rank function for ranking, partitioned by user id and ordered by created date
+
+
+| userid | created_date | product_id | rnk |
+| ------ | ------------ | ---------- | --- |
+| 1      | 3/11/2016    | 1          | 1   |
+| 1      | 5/20/2016    | 3          | 2   |
+| 1      | 11/9/2016    | 1          | 3   |
+| 1      | 3/11/2017    | 2          | 4   |
+| 1      | 4/19/2017    | 2          | 5   |
+| 1      | 3/19/2018    | 3          | 6   |
+| 1      | 10/23/2019   | 2          | 7   |
+| 2      | 9/24/2017    | 1          | 1   |
+| 2      | 11/8/2017    | 2          | 2   |
+| 2      | 9/10/2018    | 3          | 3   |
+| 2      | 7/20/2020    | 3          | 4   |
+| 3      | 11/10/2016   | 1          | 1   |
+| 3      | 12/15/2016   | 2          | 2   |
+| 3      | 12/20/2016   | 2          | 3   |
+| 3      | 12/7/2017    | 2          | 4   |
+| 3      | 12/18/2019   | 1          | 5   |
+
+
+
+**Rank all transactions for each members when they are a zomato gold member for every non gold member transaction mark as NA**
+
+
+
+
+SELECT *,
+CASE
+WHEN gold_signup_date IS NULL THEN 'NA'
+ELSE RANK()OVER(PARTITION BY userid ORDER BY created_date DESC) END as ranking
+FROM
+(SELECT s.userid, s.created_date, s.product_id, g.gold_signup_date
+FROM sales AS s LEFT JOIN goldusers_signup AS g ON s.userid = g.userid AND s.created_date >= g.gold_signup_date) as u;
+
+
+Approach:
+1. Left joined sales and goldusers_signup table in such a way that it meets following condition:
+   a. only those transactions get values in their corresponding column which were either on membership signup date or on a later date. This helps us differentiate rows 
+      which need to be ranked from the ones which do not need ranking
+2. Ranked the rows conditionally with the help of CASE expression (rows having gold_signup_date were ranked and rows having null values were give NA)   
+
+
+| userid | created_date | product_id | gold_signup_date | ranking |
+| ------ | ------------ | ---------- | ---------------- | ------- |
+| 1      | 10/23/2019   | 2          | 9/22/2017        | 1       |
+| 1      | 3/19/2018    | 3          | 9/22/2017        | 2       |
+| 1      | 4/19/2017    | 2          | Null             | NA      |
+| 1      | 3/11/2017    | 2          | Null             | NA      |
+| 1      | 11/9/2016    | 1          | Null             | NA      |
+| 1      | 5/20/2016    | 3          | Null             | NA      |
+| 1      | 3/11/2016    | 1          | Null             | NA      |
+| 2      | 7/20/2020    | 3          | Null             | NA      |
+| 2      | 9/10/2018    | 3          | Null             | NA      |
+| 2      | 11/8/2017    | 2          | Null             | NA      |
+| 2      | 9/24/2017    | 1          | Null             | NA      |
+| 3      | 12/18/2019   | 1          | 4/21/2017        | 1       |
+| 3      | 12/7/2017    | 2          | 4/21/2017        | 2       |
+
 
