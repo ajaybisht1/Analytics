@@ -1,5 +1,8 @@
 # Analytics
 
+![Zomato-Logo](https://github.com/ajaybisht1/Analytics/assets/146637154/5c08dc66-7252-4306-9185-cea39accb191)
+
+
 **Zomato App Data Analysis**
 
 This project is made using MYSQL that answers several business related questions by runnning analysis on given data. 
@@ -81,7 +84,7 @@ Use: This information is helpful to understand who are the most frequent users o
 
 Query:
 
-SELECT userid, COUNT(DISTINCT created_date) AS visits FROM sales GROUP BY userid ORDER BY userid;
+`SELECT userid, COUNT(DISTINCT created_date) AS visits FROM sales GROUP BY userid ORDER BY userid;`
 
 Approach:
 
