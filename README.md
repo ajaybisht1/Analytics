@@ -1,4 +1,4 @@
-![image](https://github.com/ajaybisht1/Analytics/assets/146637154/b8c0ff23-f677-48df-80e2-ae5f0f5d1b19)# Analytics
+# Analytics
 
 **Zomato App Data Analysis**
 
