@@ -1,9 +1,9 @@
-# Analytics
+                                 **Zomato App Data Analysis** 
 
-![Zomato-Logo](https://github.com/ajaybisht1/Analytics/assets/146637154/5c08dc66-7252-4306-9185-cea39accb191)
+![image](https://github.com/ajaybisht1/Analytics/assets/146637154/2dd4e001-5d8d-4f66-9ebd-b4cb2fda6f61)
 
 
-**Zomato App Data Analysis**
+
 
 This project is made using MYSQL that answers several business related questions by runnning analysis on given data. 
 These answers will help business take informed decisions backed by data. 
